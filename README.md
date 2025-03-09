@@ -1,0 +1,1 @@
+My first fastapi api. Returns user fake data: Name, email and password.
