@@ -1,16 +1,13 @@
 import random
 import re
 
-from pydantic import BaseModel, field_validator
-
-
 names_registry: set = set()
 
 
 def generate_fake_names(n_names: int, unique: bool = True) -> list[str]:
     # Getting lists from files
-    f1 = open("./app/fake_first_names.txt")
-    f2 = open("./app/fake_last_names.txt")
+    f1 = open("./app/fake_first_names.txt", encoding="utf-8")
+    f2 = open("./app/fake_last_names.txt", encoding="utf-8")
 
     first_names = [ name.strip() for name in f1.readlines() ]
     last_names = [ name.strip() for name in f2.readlines() ]
