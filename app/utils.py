@@ -1,9 +1,15 @@
 import random
 import re
 
-names_registry: set = set()
+
+names_vars: dict[str, any] = {"limit": 0, "cache": []}
 
 
+# Requisitos generate_fake_names:
+#   1. Gerar nomes através de duas listas (l1:primeiros nomes e l2:sobrenomes).
+#   2. Gerar os nomes de maneira eficiente.
+#   3. Gerar somente nomes únicos se requisitado.
+#   4. Gerar todos os nomes requisitados, caso isso não quebre a regra de unicicidade.
 def generate_fake_names(n_names: int, unique: bool = True) -> list[str]:
     # Getting lists from files
     f1 = open("./app/fake_first_names.txt", encoding="utf-8")
@@ -15,22 +21,36 @@ def generate_fake_names(n_names: int, unique: bool = True) -> list[str]:
     f1.close()
     f2.close()
 
+    # return names when unique == False
+    if names_vars["cache"] and not unique:
+        return [ random.choice(names_vars["cache"]) for _ in range(n_names) ]
+
+    # return names if names already generated and generated names still updated
+    # and unique == True and generated names not exausted.
+    if names_vars["cache"] and len(names_vars["cache"]) == len(first_names) * len(last_names):
+        if unique and names_vars["limit"] != 0:
+            new_names_limit = names_vars["limit"] - n_names if names_vars["limit"] - n_names > 0 else -1
+
+            result = []
+            for i in range(names_vars["limit"], new_names_limit, -1):
+                result.append(names_vars["cache"][i])
+
+            names_vars["limit"] = new_names_limit if new_names_limit > 0 else -1
+
+            return result
+        
+        return []
+
+    # Generate all names at once
     MAX_UNIQUE_NAMES = len(first_names) * len(last_names)
+    for i in range(len(first_names)):
+        for j in range(len(last_names)):
+            names_vars["cache"].append(first_names[i] +" "+ last_names[j])
+        
+    names_vars["limit"] = MAX_UNIQUE_NAMES - 1
 
-    generated_names = []
-    for i in range(n_names):
-        # break if can't generate more unique names
-        if unique and len(names_registry) >= MAX_UNIQUE_NAMES:
-            break
+    return generate_fake_names(n_names=n_names, unique=unique)
 
-        name = random.choice(first_names) +" "+ random.choice(last_names)
-
-        while unique and name in names_registry:
-            name = random.choice(first_names) +" "+ random.choice(last_names)
-
-        generated_names.append(name)
-
-    return generated_names
 
 def generate_fake_email(name: str) -> str:
     email_makers = [

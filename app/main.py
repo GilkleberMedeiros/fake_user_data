@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 import secrets
 from typing import TypeVar
@@ -12,17 +12,30 @@ app = FastAPI()
 T = TypeVar("T")
 
 # Models
-class FakeUser(BaseModel):
+class FakeUser(BaseModel, frozen=True):
     name: str
     email: str
     password: str
 
 class SystemMessageResponse(BaseModel):
     system_message: str
+    generate_target: int
+    generated: int
     data: T
 
 class FakeUserResponse(SystemMessageResponse):
     data: list[FakeUser]
+
+
+    @field_validator("data", mode="before")
+    @classmethod
+    def data_validator(cls, v: T) -> T:
+        data = set(v)
+
+        if len(data) != len(v):
+            raise Exception("Values in data aren't unique.")
+        
+        return v
     
 
 @app.get("/")
@@ -32,22 +45,25 @@ async def fake_user_data(n: int, unique: bool = True) -> FakeUserResponse:
     fake_users = list(
         map(
             lambda i: 
-                {
+            FakeUser(
+            **{
                 "name": i, 
                 "email": generate_fake_email(i), 
                 "password": secrets.token_hex(16),
-                }, 
+            }
+            ), 
             names
         )
     )
+    len_fake_users = len(fake_users)
     
-    if unique and len(fake_users) == 0:
+    if unique and len_fake_users == 0:
         message = "couldn't generate users due unique constraint. Max unique users already generated."
-    elif unique and len(fake_users) < n:
+    elif unique and len_fake_users < n:
         message = f"couldn't generate {n} users due unique constraint. Max unique users generated."
-    elif len(fake_users) < n:
+    elif len_fake_users < n:
         message = "couldn't generate suficient users due some reason."
     else:
-        message = f"{n} fake users generated."
+        message = f"{len_fake_users} fake users generated."
 
-    return {"system_message": message, "data": fake_users}
+    return {"system_message": message, "generate_target": n, "generated": len_fake_users, "data": fake_users}
