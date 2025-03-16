@@ -17,6 +17,8 @@ def generate_fake_names(n_names: int, unique: bool = True) -> list[str]:
 
     first_names = [ name.strip() for name in f1.readlines() ]
     last_names = [ name.strip() for name in f2.readlines() ]
+    len_first_names = len(first_names)
+    len_last_names = len(last_names)
 
     f1.close()
     f2.close()
@@ -27,7 +29,7 @@ def generate_fake_names(n_names: int, unique: bool = True) -> list[str]:
 
     # return names if names already generated and generated names still updated
     # and unique == True and generated names not exausted.
-    if names_vars["cache"] and len(names_vars["cache"]) == len(first_names) * len(last_names):
+    if names_vars["cache"] and len(names_vars["cache"]) == len_first_names * len_last_names:
         if unique and names_vars["limit"] != 0:
             new_names_limit = names_vars["limit"] - n_names if names_vars["limit"] - n_names > 0 else -1
 
@@ -42,12 +44,13 @@ def generate_fake_names(n_names: int, unique: bool = True) -> list[str]:
         return []
 
     # Generate all names at once
-    MAX_UNIQUE_NAMES = len(first_names) * len(last_names)
-    for i in range(len(first_names)):
-        for j in range(len(last_names)):
+    MAX_UNIQUE_NAMES = len_first_names * len_last_names
+    for i in range(len_first_names):
+        for j in range(len_last_names):
             names_vars["cache"].append(first_names[i] +" "+ last_names[j])
         
     names_vars["limit"] = MAX_UNIQUE_NAMES - 1
+    random.shuffle(names_vars["cache"]) # shuffle the cache list in place
 
     return generate_fake_names(n_names=n_names, unique=unique)
 
