@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Response, status
 from pydantic import BaseModel, field_validator
 
 import secrets
@@ -39,7 +39,7 @@ class FakeUserResponse(SystemMessageResponse):
     
 
 @app.get("/")
-async def fake_user_data(n: int, unique: bool = True) -> FakeUserResponse:
+async def fake_user_data(n: int, response: Response, unique: bool = True) -> FakeUserResponse:
     names = generate_fake_names(n, unique=unique)
 
     fake_users = list(
@@ -59,6 +59,7 @@ async def fake_user_data(n: int, unique: bool = True) -> FakeUserResponse:
     
     if unique and len_fake_users == 0:
         message = "couldn't generate users due unique constraint. Max unique users already generated."
+        response.status_code = status.HTTP_429_TOO_MANY_REQUESTS
     elif unique and len_fake_users < n:
         message = f"couldn't generate {n} users due unique constraint. Max unique users generated."
     elif len_fake_users < n:
